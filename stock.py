@@ -1,5 +1,6 @@
 # coding: utf-8
-
+import bs4 as bs
+import requests
 import pandas as pd
 import pandas_datareader.data as pdr
 import matplotlib
@@ -10,9 +11,22 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn import linear_model
 from xgboost import XGBRegressor
 
-start = datetime.datetime(1995, 1, 15)
+def sp500_tickers():
+    resp = requests.get('http://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+    soup = bs.BeautifulSoup(resp.text, 'lxml')
+    table = soup.find('table', {'class': 'wikitable sortable'})
+    tickers = []
+    for row in table.findAll('tr')[1:]:
+        ticker = row.findAll('td')[0].find('a')['href']
+        
+        tickers.append(ticker.rsplit('/', 1)[-1].replace("XNYS", "NYSE"))
+    print(tickers)
+    return tickers
+
+
+tickers = sp500_tickers()
+start = datetime.datetime(2005, 1, 15)
 end = datetime.datetime(2017, 5, 31)
-stocks = ['AAPL', 'GOOGL', 'MSFT', 'DELL', 'GS', 'MS', 'NYSE:BAC', 'C']
 
 def get_px(stock, start, end):
     return pdr.DataReader(stock, 'google', start, end)['Close']
@@ -43,5 +57,5 @@ def predict_price(stock):
     plt.legend()
     plt.show()
 
-for n in stocks:
+for n in tickers:
     predict_price(n)
