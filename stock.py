@@ -4,8 +4,9 @@ import requests
 import pandas as pd
 import pandas_datareader.data as pdr
 import matplotlib
-import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mpldates
+import numpy as np
 import datetime
 from sklearn.ensemble import RandomForestRegressor
 from sklearn import linear_model
@@ -25,31 +26,40 @@ def sp500_tickers():
 
 
 tickers = sp500_tickers()
-start = datetime.datetime(2005, 1, 15)
+start = datetime.datetime(2000, 1, 15)
 end = datetime.datetime(2017, 5, 31)
 
 def get_px(stock, start, end):
-    return pdr.DataReader(stock, 'google', start, end)['Close']
+    return pdr.DataReader(stock, 'google', start, end)
 
 def predict_price(stock):
+    print(stock)
+    px = pd.DataFrame(get_px(stock, start, end))
     
-    px = pd.DataFrame(get_px(stock, start, end)).reset_index()
-    dates = px['Date'].values.astype(dtype='datetime64[D]').reshape(-1, 1)
-    prices = px['Close'].values
-
+    if px.empty:
+        print('DataFrame is empty!')
+        return
+    
+    px['100ma'] = px['Close'].rolling(window=100,min_periods=0).mean()
+    px = px.reset_index()
+    px['Date'] = px['Date'].map(mpldates.date2num)
+    
+    dates = px[['Date', '100ma']]
+    prices = px['Close']
+    
     rfr = RandomForestRegressor(n_estimators=3, max_depth=10)
     reg = linear_model.LinearRegression()
     xgb = XGBRegressor()
     
     rfr.fit(dates, prices)
-    reg.fit(dates.astype('float64'), prices)
-    xgb.fit(dates.astype('float64'), prices)
+    reg.fit(dates, prices)
+    xgb.fit(dates, prices)
 
-    plt.scatter(dates, prices, color='Black', label='Data')
+    plt.scatter(dates['Date'], prices, color='Black', label='Data')
     
-    plt.plot(dates, rfr.predict(dates), color='red', label='RFC model')
-    plt.plot(dates, reg.predict(dates.astype('float64')), color='blue', label='BREG model')
-    plt.plot(dates, xgb.predict(dates.astype('float64')), color='green', label='XGB')
+    plt.plot(dates['Date'], rfr.predict(dates), color='red', label='RFC model')
+    plt.plot(dates['Date'], reg.predict(dates), color='blue', label='BREG model')
+    plt.plot(dates['Date'], xgb.predict(dates), color='green', label='XGB')
     
     plt.xlabel('Date')
     plt.ylabel('Price')
@@ -57,5 +67,5 @@ def predict_price(stock):
     plt.legend()
     plt.show()
 
-for n in tickers:
+for n in tickers[:10]:
     predict_price(n)
