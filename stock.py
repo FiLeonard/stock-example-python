@@ -42,9 +42,9 @@ def predict_price(stock):
     
     px['100ma'] = px['Close'].rolling(window=100,min_periods=0).mean()
     px = px.reset_index()
-    px['Date'] = px['Date'].map(mpldates.date2num)
+    px['DateNUM'] = px['Date'].map(mpldates.date2num)
     
-    dates = px[['Date', '100ma']]
+    dates = px[['DateNUM', '100ma']]
     prices = px['Close']
     
     rfr = RandomForestRegressor(n_estimators=3, max_depth=10)
@@ -55,11 +55,11 @@ def predict_price(stock):
     reg.fit(dates, prices)
     xgb.fit(dates, prices)
 
-    plt.scatter(dates['Date'], prices, color='Black', label='Data')
+    plt.scatter(px['Date'].values, prices, color='Black', label='Data')
     
-    plt.plot(dates['Date'], rfr.predict(dates), color='red', label='RFC model')
-    plt.plot(dates['Date'], reg.predict(dates), color='blue', label='BREG model')
-    plt.plot(dates['Date'], xgb.predict(dates), color='green', label='XGB')
+    plt.plot(px['Date'].values, rfr.predict(dates), color='red', label='RFC model')
+    plt.plot(px['Date'].values, reg.predict(dates), color='blue', label='BREG model')
+    plt.plot(px['Date'].values, xgb.predict(dates), color='green', label='XGB')
     
     plt.xlabel('Date')
     plt.ylabel('Price')
