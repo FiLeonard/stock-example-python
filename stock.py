@@ -21,7 +21,7 @@ def sp500_tickers():
         ticker = row.findAll('td')[0].find('a')['href']
         
         tickers.append(ticker.rsplit('/', 1)[-1].replace("XNYS", "NYSE"))
-    print(tickers)
+    print(tickers[:5])
     return tickers
 
 
